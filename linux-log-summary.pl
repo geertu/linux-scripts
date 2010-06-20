@@ -65,7 +65,7 @@ sub add_record()
 sub read_log()
 {
     my $log = $_[0];
-    # FIXME more my variables
+    my ($line, $id, $msg);
 
     open(LOG, "<$log") or die "Cannot open $log";
     while ($line = <LOG>) {
