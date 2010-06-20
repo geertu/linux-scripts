@@ -75,6 +75,8 @@ sub read_log()
 	    &add_record(\%errors, $log, $line, $id);
 	} elsif (($id, $msg) = $line =~ m{(^.*):\s*warning:\s*(.*$)}) {
 	    &add_record(\%warnings, $log, $line, $id);
+	} elsif (($msg) = $line =~ m{warning:\s(modpost:\s.*$)}i) {
+	    &add_record(\%warnings, $log, $msg, "modpost");
 	} elsif ($line =~ /error/i) {
 	    # FIXME
 	    print STDERR "Unhandled error: $line\n";
