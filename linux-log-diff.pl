@@ -33,7 +33,7 @@ EOF
 
 sub set_common_prefix()
 {
-    my $s = $_[0];
+    my $s = shift;
 
     return if $s !~ m{^/};
     return if $s =~ m{^/opt/};
@@ -47,11 +47,11 @@ sub set_common_prefix()
 
 sub add()
 {
-    my $db = $_[0];
-    my $log = $_[1];
-    my $file = $_[2];
-    my $loc = $_[3];
-    my $msg = $_[4];
+    my $db = shift;
+    my $log = shift;
+    my $file = shift;
+    my $loc = shift;
+    my $msg = shift;
 
     # FIXME use hash instead of array
     $db->{$file}{$msg}{$log}{$loc} = 1;
@@ -65,7 +65,7 @@ sub add()
 
 sub process()
 {
-    my $log = $_[0];
+    my $log = shift;
 
     open(LOG, "<$log") or die "Cannot open $log";
     while ($line = <LOG>) {

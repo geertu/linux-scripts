@@ -28,7 +28,7 @@ EOF
 
 sub set_common_prefix()
 {
-    my $s = $_[0];
+    my $s = shift;
 
     # FIXME other cases
     return if $s !~ m{^/};
@@ -43,10 +43,10 @@ sub set_common_prefix()
 
 sub add_record()
 {
-    my $db = $_[0];
-    my $log = $_[1];
-    my $line = $_[2];
-    my $id = $_[3];
+    my $db = shift;
+    my $log = shift;
+    my $line = shift;
+    my $id = shift;
 
     if (!exists($db->{$line})) {
 	$db->{$line}{"cnt"} = 1;
@@ -59,7 +59,7 @@ sub add_record()
 
 sub read_log()
 {
-    my $log = $_[0];
+    my $log = shift;
     my ($line, $id, $msg);
 
     open(LOG, "<$log") or die "Cannot open $log";
@@ -85,9 +85,9 @@ sub read_log()
 
 sub print_record()
 {
-    my $record = $_[0];
-    my $line = $_[1];
-    my $type = $_[2];
+    my $record = shift;
+    my $line = shift;
+    my $type = shift;
 
     my $cnt = $record->{"cnt"};
     my @logs = keys %{$record->{"logs"}};
@@ -99,10 +99,10 @@ sub print_record()
 
 sub sort_records()
 {
-    my $a = $_[0];
-    my $ra = $_[1];
-    my $b = $_[2];
-    my $rb = $_[3];
+    my $a = shift;
+    my $ra = shift;
+    my $b = shift;
+    my $rb = shift;
 
     my $logs1 = keys %{$ra->{"logs"}};
     my $logs2 = keys %{$rb->{"logs"}};
