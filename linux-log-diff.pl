@@ -53,13 +53,7 @@ sub add()
     my $loc = shift;
     my $msg = shift;
 
-    # FIXME use hash instead of array
     $db->{$file}{$msg}{$log}{$loc} = 1;
-    if (!exists($db->{$file}{$msg}{$log})) {
-	$db->{$file}{$msg}{$log} = [ $loc ];
-    } else {
-	push @{$db->{$file}{$msg}{$log}}, $loc;
-    }
     &set_common_prefix($file);
 }
 
@@ -124,17 +118,15 @@ sub print_report
     while (($file, $msgs) = each %db) {
 	$file =~ s@^$common_prefix@@;
 	while (($msg, $logs) = each %$msgs) {
-	    my $msgs1 = @{$logs}{$log1};
-	    $msgs1 = [] if !defined($msgs1);
-	    my $msgs2 = @{$logs}{$log2};
-	    $msgs2 = [] if !defined($msgs2);
-	    next if @{$msgs1} == @{$msgs2} and !$verbose;
-	    my $line = "$file: $msg: " . join(', ', @{$msgs1}) . " => " .
-		    join(', ', @{$msgs2}) . "\n";
-	    if (@{$msgs1} < @{$msgs2}) {
+	    my @msgs1 = keys %{$logs->{$log1}};
+	    my @msgs2 = keys %{$logs->{$log2}};
+	    next if $#msgs1 == $#msgs2 and !$verbose;
+	    my $line = "$file: $msg: " . join(', ', @msgs1) . " => " .
+		    join(', ', @msgs2) . "\n";
+	    if ($#msgs1 < $#msgs2) {
 		print "NEW  : $line" if $verbose;
 		push @regressions, $line;
-	    } elsif (@{$msgs1} > @{$msgs2}) {
+	    } elsif ($#msgs1 > $#msgs2) {
 		print "FIXED: $line" if $verbose;
 		push @improvements, $line;
 	    } elsif ($verbose) {
