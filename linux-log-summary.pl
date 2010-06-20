@@ -49,16 +49,11 @@ sub add_record()
     my $id = $_[3];
 
     if (!exists($db->{$line})) {
-	my $record = {};
-	$record->{"cnt"} = 1;
-	$record->{"logs"} = [ $log ];
-	$db->{$line} = $record;
+	$db->{$line}{"cnt"} = 1;
     } else {
 	$db->{$line}{"cnt"}++;
-	if (@{$db->{$line}{"logs"}}[-1] ne $log) {
-	    push @{$db->{$line}{"logs"}}, $log;
-	}
     }
+    $db->{$line}{"logs"}{$log} = 1;
     &set_common_prefix($id);
 }
 
@@ -95,7 +90,7 @@ sub print_record()
     my $type = $_[2];
 
     my $cnt = $record->{"cnt"};
-    my @logs = @{$record->{"logs"}};
+    my @logs = keys %{$record->{"logs"}};
     my $logs = $#logs + 1;
     $line =~ s@^$common_prefix@@;
     print "$line: $cnt $type in $logs logs\n";
@@ -109,8 +104,8 @@ sub sort_records()
     my $b = $_[2];
     my $rb = $_[3];
 
-    my $logs1 = $#{$ra->{"logs"}};
-    my $logs2 = $#{$rb->{"logs"}};
+    my $logs1 = keys %{$ra->{"logs"}};
+    my $logs2 = keys %{$rb->{"logs"}};
 
     return 1 if $logs1 < $logs2;
     return -1 if $logs1 > $logs2;
