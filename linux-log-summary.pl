@@ -33,6 +33,7 @@ sub set_common_prefix()
     # FIXME other cases
     return if $s !~ m{^/};
     return if $s =~ m{^/opt};
+    return if $s =~ m{^/tmp/};
     return if $s =~ m{^/usr};
     if (defined($common_prefix)) {
 	chop $common_prefix while ($s !~ /^\Q$common_prefix\E/);
