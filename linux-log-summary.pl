@@ -39,6 +39,27 @@ sub set_common_prefix()
     }
 }
 
+sub add_record()
+{
+    my $db = $_[0];
+    my $log = $_[1];
+    my $line = $_[2];
+    my $id = $_[3];
+
+    if (!exists($db->{$line})) {
+	my $record = {};
+	$record->{"cnt"} = 1;
+	$record->{"logs"} = [ $log ];
+	$db->{$line} = $record;
+    } else {
+	$db->{$line}{"cnt"}++;
+	if (@{$db->{$line}{"logs"}}[-1] ne $log) {
+	    push @{$db->{$line}{"logs"}}, $log;
+	}
+    }
+    &set_common_prefix($id);
+}
+
 sub read_log()
 {
     my $log = $_[0];
@@ -49,33 +70,9 @@ sub read_log()
 	chomp($line);
 
 	if (($id, $msg) = $line =~ m{(^.*):\s*error:\s*(.*$)}) {
-	    if (!exists($errors{$line})) {
-		my $record = {};
-		$record->{"cnt"} = 1;
-		$record->{"logs"} = [ $log ];
-		$errors{$line} = $record;
-	    } else {
-		$errors{$line}{"cnt"}++;
-		if (@{$errors{$line}{"logs"}}[-1] ne $log) {
-		    push @{$errors{$line}{"logs"}}, $log;
-		}
-	    }
-	    &set_common_prefix($id);
+	    &add_record(\%errors, $log, $line, $id);
 	} elsif (($id, $msg) = $line =~ m{(^.*):\s*warning:\s*(.*$)}) {
-	    if (!exists($warnings{$line})) {
-		my $record = {};
-		$record->{"cnt"} = 1;
-		$record->{"logs"} = [ $log ];
-		$warnings{$line} = $record;
-	    } else {
-		my $record = $warnings{$line};
-		$record->{"cnt"}++;
-		if (@{$record->{"logs"}}[-1] ne $log) {
-		    push @{$record->{"logs"}}, $log;
-		}
-		$warnings{$line} = $record;
-	    }
-	    &set_common_prefix($id);
+	    &add_record(\%warnings, $log, $line, $id);
 	} elsif ($line =~ /error/i) {
 	    # FIXME
 	    print STDERR "Unhandled error: $line\n";
