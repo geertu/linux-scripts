@@ -31,7 +31,9 @@ sub set_common_prefix()
     my $s = $_[0];
 
     # FIXME other cases
-    return if $s =~ /^<stdin>/;
+    return if $s !~ m{^/};
+    return if $s =~ m{^/opt};
+    return if $s =~ m{^/usr};
     if (defined($common_prefix)) {
 	chop $common_prefix while ($s !~ /^\Q$common_prefix\E/);
     } else {
