@@ -69,6 +69,9 @@ sub process()
 	if (($file, $loc, $msg) =
 	    $line =~ m{(^[^:]*):([0-9:]+):\s*(error:\s*.*$)}i) {
 	    &add(\%errors, $log, $file, $loc, $msg);
+	} elsif (($file, $msg) =
+	    $line =~ m{(^[^:]*):\s*(error in\s*.*$)}i) {
+	    &add(\%errors, $log, $file, "N/A", $msg);
 	} elsif (($file, $loc, $msg) =
 	    $line =~ m{(^[^:]*):([0-9:]+):\s*(warning:\s*.*$)}i) {
 	    &add(\%warnings, $log, $file, $loc, $msg);

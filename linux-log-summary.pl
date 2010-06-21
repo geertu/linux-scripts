@@ -69,6 +69,8 @@ sub read_log()
 
 	if (($id, $msg) = $line =~ m{(^.*):\s*error:\s*(.*$)}) {
 	    &add_record(\%errors, $log, $line, $id);
+	} elsif (($id, $msg) = $line =~ m{^.*:\s*error in (.*);\s*(.*$)}) {
+	    &add_record(\%errors, $log, "$id: $msg", $id);
 	} elsif (($id, $msg) = $line =~ m{(^.*):\s*warning:\s*(.*$)}) {
 	    &add_record(\%warnings, $log, $line, $id);
 	} elsif (($msg) = $line =~ m{warning:\s(modpost:\s.*$)}i) {
