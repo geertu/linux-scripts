@@ -75,12 +75,10 @@ sub read_log()
 	    &add_record(\%warnings, $log, $line, $id);
 	} elsif (($msg) = $line =~ m{warning:\s(modpost:\s.*$)}i) {
 	    &add_record(\%warnings, $log, $msg, "modpost");
-	} elsif ($line =~ /error/i) {
+	} elsif ($debug) {
 	    # FIXME
-	    print STDERR "Unhandled error: $line\n";
-	} elsif ($line =~ /warn/i) {
-	    # FIXME
-	    print STDERR "Unhandled warning: $line\n";
+	    print STDERR "Unhandled error: $line\n" if ($line =~ /error/i);
+	    print STDERR "Unhandled warning: $line\n" if ($line =~ /warn/i);
 	}
     }
     close(LOG);
@@ -130,6 +128,8 @@ while (defined($ARGV[0])) {
 	last if not $option =~ /^-/;
 	if ($option eq '-h' or $option eq '--help') {
 		&usage();
+	} elsif ($option eq '-d' or $option eq '--debug') {
+		$debug = 1;
 	} elsif ($option eq '-v' or $option eq '--verbose') {
 		$verbose = 1;
 	} elsif ($option eq '--') {

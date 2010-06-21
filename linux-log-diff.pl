@@ -27,7 +27,6 @@ Usage: $name [options] oldlog newlog
 Valid options:
 	-h, --help	Display this help
 	-d, --debug	Enable debug mode
-	-v, --verbose	Enable verbose mode
 EOF
 }
 
@@ -91,7 +90,7 @@ while (defined($ARGV[0])) {
 	last if not $option =~ /^-/;
 	if ($option eq '-h' or $option eq '--help') {
 		&usage();
-	} elsif ($option eq '-v' or $option eq '--debug') {
+	} elsif ($option eq '-d' or $option eq '--debug') {
 		$debug = 1;
 	} elsif ($option eq '--') {
 		shift @ARGV;
@@ -124,16 +123,16 @@ sub print_report
 	while (($msg, $logs) = each %$msgs) {
 	    my @msgs1 = keys %{$logs->{$log1}};
 	    my @msgs2 = keys %{$logs->{$log2}};
-	    next if $#msgs1 == $#msgs2 and !$verbose;
+	    next if $#msgs1 == $#msgs2 and !$debug;
 	    my $line = "$file: $msg: " . join(', ', @msgs1) . " => " .
 		    join(', ', @msgs2) . "\n";
 	    if ($#msgs1 < $#msgs2) {
-		print "NEW  : $line" if $verbose;
+		print "NEW  : $line" if $debug;
 		push @regressions, $line;
 	    } elsif ($#msgs1 > $#msgs2) {
-		print "FIXED: $line" if $verbose;
+		print "FIXED: $line" if $debug;
 		push @improvements, $line;
-	    } elsif ($verbose) {
+	    } elsif ($debug) {
 		print "$line";
 	    }
 	}
