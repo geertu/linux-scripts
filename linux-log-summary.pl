@@ -67,11 +67,11 @@ sub read_log()
     while ($line = <LOG>) {
 	chomp($line);
 
-	if (($id, $msg) = $line =~ m{(^.*):\s*error:\s*(.*$)}) {
+	if (($id, $msg) = $line =~ m{(^.*):\s*error:\s*(.*$)}i) {
 	    &add_record(\%errors, $log, $line, $id);
-	} elsif (($id, $msg) = $line =~ m{^.*:\s*error in (.*);\s*(.*$)}) {
+	} elsif (($id, $msg) = $line =~ m{^.*:\s*error in (.*);\s*(.*$)}i) {
 	    &add_record(\%errors, $log, "$id: $msg", $id);
-	} elsif (($id, $msg) = $line =~ m{(^.*):\s*warning:\s*(.*$)}) {
+	} elsif (($id, $msg) = $line =~ m{(^.*):\s*warning:\s*(.*$)}i) {
 	    &add_record(\%warnings, $log, $line, $id);
 	} elsif (($msg) = $line =~ m{warning:\s(modpost:\s.*$)}i) {
 	    &add_record(\%warnings, $log, $msg, "modpost");
