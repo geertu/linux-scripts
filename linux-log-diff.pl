@@ -7,16 +7,7 @@
 # License.
 #
 
-# FIXME link failures and other unhandled errors?
-# FIXME section mismatches and other unhandled warnings?
-# FIXME separate errors and warnings completely, i.e. 2 passess using a generic
-#	common routine?
-
-$esc_red = "\e[31m";
-$esc_green = "\e[32m";
-$esc_rm = "\e[0m";
-
-sub usage() 
+sub usage()
 {
 	my $name = $0;
 	$name =~ s@.*/@@g;
@@ -45,7 +36,7 @@ sub set_common_prefix()
     }
 }
 
-sub add()
+sub add_record()
 {
     my $db = shift;
     my $log = shift;
@@ -57,9 +48,10 @@ sub add()
     &set_common_prefix($file);
 }
 
-sub process()
+sub read_log()
 {
     my $log = shift;
+    my ($line, $file,$loc, $msg);
 
     open(LOG, "<$log") or die "Cannot open $log";
     while ($line = <LOG>) {
@@ -67,48 +59,38 @@ sub process()
 
 	if (($file, $loc, $msg) =
 	    $line =~ m{(^[^:]*):([0-9:]+):\s*(error:\s*.*$)}i) {
-	    &add(\%errors, $log, $file, $loc, $msg);
+	    # compile error
+	    &add_record(\%errors, $log, $file, $loc, $msg);
+	} elsif (($msg) = $line =~ m{error: (.*undefined!)}i) {
+	    # link error: undefined symbol
+	    &add_record(\%errors, $log, "error", "N/A", $msg);
 	} elsif (($file, $msg) =
 	    $line =~ m{(^[^:]*):\s*(error in\s*.*$)}i) {
-	    &add(\%errors, $log, $file, "N/A", $msg);
+	    # link error
+	    &add_record(\%errors, $log, $file, "N/A", $msg);
 	} elsif (($file, $loc, $msg) =
 	    $line =~ m{(^[^:]*):([0-9:]+):\s*(warning:\s*.*$)}i) {
-	    &add(\%warnings, $log, $file, $loc, $msg);
+	    # compile warning
+	    &add_record(\%warnings, $log, $file, $loc, $msg);
 	} elsif (($msg) = $line =~ m{(warning:\smodpost.*$)}i) {
-	    &add(\%warnings, $log, "modpost", "N/A", $msg);
+	    # modpost warning
+	    &add_record(\%warnings, $log, "modpost", "N/A", $msg);
+	} elsif ($line =~ m{^distcc}) {
+	    # distcc cruft
+	    print STDERR "Ignoring distcc: $line\n" if $debug;
+	} elsif (($msg) = $line =~ m{^Warning (\(.*)}i) {
+	    # dtc warning
+	    &add_record(\%warnings, $log, "dtc", "N/A", $msg);
+	} elsif (($msg) = $line =~ m{^warning: (.*)}i) {
+	    # modpost or relocs_check.pl warning
+	    &add_record(\%warnings, $log, "warning", "N/A", $msg);
 	} elsif ($debug) {
-	    # FIXME
 	    print STDERR "Unhandled error: $line\n" if ($line =~ /error/i);
 	    print STDERR "Unhandled warning: $line\n" if ($line =~ /warn/i);
 	}
     }
     close(LOG);
 }
-
-while (defined($ARGV[0])) {
-	$option = $ARGV[0];
-	last if not $option =~ /^-/;
-	if ($option eq '-h' or $option eq '--help') {
-		&usage();
-	} elsif ($option eq '-d' or $option eq '--debug') {
-		$debug = 1;
-	} elsif ($option eq '--') {
-		shift @ARGV;
-		last;
-	} else {
-		print STDERR "Unknown option $option\n";
-		&usage();
-	}
-	shift @ARGV;
-}
-
-&usage if ($#ARGV != 1);
-
-$log1 = $ARGV[0];
-$log2 = $ARGV[1];
-
-&process($log1);
-&process($log2);
 
 sub print_report
 {
@@ -149,6 +131,30 @@ sub print_report
 	print join("\t", sort @improvements);
     }
 }
+
+while (defined($ARGV[0])) {
+	$option = $ARGV[0];
+	last if not $option =~ /^-/;
+	if ($option eq '-h' or $option eq '--help') {
+		&usage();
+	} elsif ($option eq '-d' or $option eq '--debug') {
+		$debug = 1;
+	} elsif ($option eq '--') {
+		shift @ARGV;
+		last;
+	} else {
+		print STDERR "Unknown option $option\n";
+		&usage();
+	}
+	shift @ARGV;
+}
+
+&usage if ($#ARGV != 1);
+
+$log1 = shift @ARGV;
+$log2 = shift @ARGV;
+&read_log($log1);
+&read_log($log2);
 
 print "\n*** ERRORS ***\n";
 print_report(\%errors);
