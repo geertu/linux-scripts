@@ -7,11 +7,6 @@
 # License.
 #
 
-# FIXME link failures and other unhandled errors?
-# FIXME section mismatches and other unhandled warnings?
-# FIXME separate errors and warnings completely, i.e. 2 passess using a generic
-#	common routine?
-
 sub usage()
 {
 	my $name = $0;
@@ -30,7 +25,6 @@ sub set_common_prefix()
 {
     my $s = shift;
 
-    # FIXME other cases
     return if $s !~ m{^/};
     return if $s =~ m{^/opt};
     return if $s =~ m{^/tmp/};
@@ -68,15 +62,30 @@ sub read_log()
 	chomp($line);
 
 	if (($id, $msg) = $line =~ m{(^.*):\s*error:\s*(.*$)}i) {
+	    # compile error
 	    &add_record(\%errors, $log, $line, $id);
+	} elsif (($msg) = $line =~ m{error: (.*undefined!)}i) {
+	    # link error: undefined symbol
+	    &add_record(\%errors, $log, $line, "");
 	} elsif (($id, $msg) = $line =~ m{^.*:\s*error in (.*);\s*(.*$)}i) {
+	    # link error
 	    &add_record(\%errors, $log, "$id: $msg", $id);
 	} elsif (($id, $msg) = $line =~ m{(^.*):\s*warning:\s*(.*$)}i) {
+	    # compile warning
 	    &add_record(\%warnings, $log, $line, $id);
 	} elsif (($msg) = $line =~ m{warning:\s(modpost:\s.*$)}i) {
+	    # modpost warning
 	    &add_record(\%warnings, $log, $msg, "modpost");
+	} elsif ($line =~ m{^distcc}) {
+	    # distcc cruft
+	    print STDERR "Ignoring distcc: $line\n" if $debug;
+	} elsif (($msg) = $line =~ m{^Warning (\(.*)}i) {
+	    # dtc warning
+	    &add_record(\%warnings, $log, $line, "dtc");
+	} elsif (($msg) = $line =~ m{^warning: (.*)}i) {
+	    # modpost or relocs_check.pl warning
+	    &add_record(\%warnings, $log, $line, "");
 	} elsif ($debug) {
-	    # FIXME
 	    print STDERR "Unhandled error: $line\n" if ($line =~ /error/i);
 	    print STDERR "Unhandled warning: $line\n" if ($line =~ /warn/i);
 	}
