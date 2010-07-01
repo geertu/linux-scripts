@@ -17,7 +17,8 @@ Usage: $name [options] buildlogs...
 
 Valid options:
 	-h, --help	Display this help
-	-v, --verbose	Enable verbose mode
+	-d, --debug	Enable debug mode
+	-v, --verbose	Enable verbose mode to show affected configs
 EOF
 }
 
