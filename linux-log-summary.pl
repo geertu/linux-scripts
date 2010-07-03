@@ -100,6 +100,7 @@ sub read_log()
 	    print STDERR "Unhandled error: $line\n" if ($line =~ /error/i);
 	    print STDERR "Unhandled warning: $line\n" if ($line =~ /warn/i);
 	}
+	# FIXME headers_check
     }
     close(LOG);
 }
