@@ -61,6 +61,15 @@ sub read_log()
 	    $line =~ m{(^[^:]*):([0-9:]+):\s*(error:\s*.*$)}i) {
 	    # compile error
 	    &add_record(\%errors, $log, $file, $loc, $msg);
+	} elsif (($msg1, $loc, $msg2) =
+	    $line =~ m{(^.*):\((.*\))(.*: undefined reference.*)}i) {
+	    # link error: undefined reference.
+	    &add_record(\%errors, $log, "error", $loc, "$msg1$msg2");
+	} elsif (($msg1, $loc, $msg2) =
+	    $line =~ m{^(.*)(\(.*\)): (relocation truncated.*)}i) {
+	    # link error: relocation truncated
+	    $msg1 .= " " if ($msg1 ne "");
+	    &add_record(\%errors, $log, "error", $loc, "$msg1$msg2");
 	} elsif (($msg) = $line =~ m{error: (.*undefined!)}i) {
 	    # link error: undefined symbol
 	    &add_record(\%errors, $log, "error", "N/A", $msg);
@@ -68,6 +77,10 @@ sub read_log()
 	    $line =~ m{(^[^:]*):\s*(error in\s*.*$)}i) {
 	    # link error
 	    &add_record(\%errors, $log, $file, "N/A", $msg);
+	} elsif (($target) = $line =~ m{No rule to make target .(.*).,}i) {
+	    # make error
+	    &add_record(\%errors, $log, "error", "N/A",
+			"No rule to make target $target");
 	} elsif (($file, $loc, $msg) =
 	    $line =~ m{(^[^:]*):([0-9:]+):\s*(warning:\s*.*$)}i) {
 	    # compile warning

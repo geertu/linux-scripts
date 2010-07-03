@@ -65,12 +65,22 @@ sub read_log()
 	if (($id, $msg) = $line =~ m{(^.*):\s*error:\s*(.*$)}i) {
 	    # compile error
 	    &add_record(\%errors, $log, $line, $id);
+	} elsif (($id, $msg) = $line =~ m{(^.*): (undefined reference.*)}i) {
+	    # link error: undefined reference.
+	    &add_record(\%errors, $log, $line, $id);
+	} elsif (($id, $msg) = $line =~ m{(^.*): (relocation truncated.*)}i) {
+	    # link error: relocation truncated
+	    &add_record(\%errors, $log, $line, $id);
 	} elsif (($msg) = $line =~ m{error: (.*undefined!)}i) {
 	    # link error: undefined symbol
 	    &add_record(\%errors, $log, $line, "");
 	} elsif (($id, $msg) = $line =~ m{^.*:\s*error in (.*);\s*(.*$)}i) {
 	    # link error
 	    &add_record(\%errors, $log, "$id: $msg", $id);
+	} elsif (($target) = $line =~ m{No rule to make target .(.*).,}i) {
+	    # make error
+	    &add_record(\%errors, $log, "No rule to make target $target",
+			"make");
 	} elsif (($id, $msg) = $line =~ m{(^.*):\s*warning:\s*(.*$)}i) {
 	    # compile warning
 	    &add_record(\%warnings, $log, $line, $id);
