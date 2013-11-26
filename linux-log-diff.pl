@@ -137,13 +137,13 @@ sub print_report
 
     $n = $#regressions + 1;
     if ($n) {
-	print "\n$n regressions:\n\t";
-	print join("\t", sort @regressions);
+	print "\n$n regressions:\n  + ";
+	print join("  + ", sort @regressions);
     }
     $n = $#improvements + 1;
     if ($n) {
-	print "\n$n improvements:\n\t";
-	print join("\t", sort @improvements);
+	print "\n$n improvements:\n  - ";
+	print join("  - ", sort @improvements);
     }
 }
 
