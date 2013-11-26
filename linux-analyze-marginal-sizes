@@ -1,0 +1,124 @@
+#!/bin/bash
+
+#
+# © Copyright 2013 by Geert Uytterhoeven <geert@linux-m68k.org>
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.
+#
+
+INFO=true
+
+function usage()
+{
+	cat <<END
+
+	Usage: $(basename $0) [options] [make arguments ...]
+
+	Valid options:
+		-h, --help      Display this help
+		-k, --keep	Keep vmlinux and System.map for each build
+		-v, --verbose   Enable verbose mode
+
+	Make arguments are passed to make, e.g.
+		CROSS_COMPILE=m68k-linux-gnu- ARCH=m68k -j 4
+
+	CROSS_COMPILE is also extracted to call the proper size utility.
+END
+	exit -1
+}
+
+function extract_sizes
+{
+	${CROSS_COMPILE}size vmlinux > sizes || exit -1
+	# Extract total
+	tail -1 sizes | cut -f 4
+}
+
+function save_failure()
+{
+	for i in $SAVEFILES_FAILURE; do
+		mv $i $i.$1;
+	done
+}
+
+function save_success()
+{
+	for i in $SAVEFILES_SUCCESS; do
+		mv $i $i.$1;
+	done
+}
+
+SAVEFILES_FAILURE=".config build.log"
+SAVEFILES_SUCCESS=".config build.log sizes"
+
+for arg in $*; do
+    case $arg in
+    -h|--help)
+	    usage
+	    ;;
+
+    -k|--keep)
+	    SAVEFILES_SUCCESS="$SAVEFILES_SUCCESS vmlinux System.map"
+	    ;;
+
+    -v|--verbose)
+	    INFO=echo
+	    ;;
+
+    CROSS_COMPILE=*)
+	    CROSS_COMPILE=${arg#CROSS_COMPILE=}
+	    # Fall through
+	    ;&
+    *)
+	    MAKEARGS="$MAKEARGS $arg"
+	    ;;
+    esac
+done
+
+MAKE="make $MAKEARGS"
+
+# Disable modules, if enabled
+if grep -q '^CONFIG_MODULES=y$' .config; then
+	$INFO Disabling modules
+	sed -i -e 's/^CONFIG_MODULES=y$/CONFIG_MODULES=n/g' \
+	       -e 's/=m$/=n/g' .config
+	$MAKE oldnoconfig >& /dev/null
+
+	if grep -q '^CONFIG_MODULES=y$' .config; then
+		echo CONFIG_MODULES cannot be disabled
+		exit -1
+	fi
+fi
+
+# Build baseline
+$INFO Building baseline kernel image
+rm -f vmlinux System.map
+$MAKE vmlinux >& build.log || exit -1
+size=$(extract_sizes)
+$INFO Baseline size is $total
+save_success baseline
+
+# For all =y options
+for option in $(grep '^CONFIG_.*=y$' .config.baseline | sed -e 's/=y$//g'); do
+	$INFO Disabling $option
+	sed -e "s/^$option=y\$/$option=n/g" < .config.baseline > .config
+	$MAKE oldnoconfig >& /dev/null
+
+	if grep -q "^$option=y$" .config; then
+		echo $option cannot be disabled
+		continue
+	fi
+
+	rm -f vmlinux System.map
+	if ! $MAKE vmlinux >& build.log; then
+		echo Build with $option=n failed
+		save_failure $option=n
+		continue
+	fi
+
+	delta=$(($size - $(extract_sizes)))
+	echo Disabling $option saves $delta bytes
+
+	save_success $option=n
+done
