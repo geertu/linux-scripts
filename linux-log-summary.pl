@@ -114,7 +114,7 @@ sub print_record()
     my $cnt = $record->{"cnt"};
     my @logs = keys %{$record->{"logs"}};
     my $logs = $#logs + 1;
-    $line =~ s@^$common_prefix@@;
+    $line =~ s@^$common_prefix@@ if defined($common_prefix);
     print "$line: $cnt $type in $logs logs\n";
     print "\t@logs\n" if $verbose;
 }

@@ -21,6 +21,8 @@ Valid options:
 EOF
 }
 
+$common_prefix = "";
+
 sub set_common_prefix()
 {
     my $s = shift;
