@@ -1,0 +1,82 @@
+
+  * linux-analyze-marginal-sizes
+
+    Starting from the current .config file, find out how much space is saved
+    in the kernel image by individually disabling each of the currently
+    enabled config options.
+
+    You can pass make options to specify e.g. the target architecture and
+    cross compiler.
+
+    Caveats:
+      * This is only about static kernel size, not about dynamic memory
+	consumption.
+      * You cannot just add up the numbers, as some config options depend on
+        other config options.
+      * It's highly recommended to use ccache or distcc.
+
+    Example: Display the top 10 options to decrease kernel image size:
+
+	linux-analyze-marginal-sizes CROSS_COMPILE=m68k-linux-gnu- \
+		ARCH=m68k -j 4 | tee log
+	grep -w saves log | sort -nr --key=4 | head -10
+
+  * linux-config-diff
+
+    Show the difference between one or more .config files.
+
+  * linux-config-merge
+
+    Combine two .config files using an AND or OR operation on each config
+    option.
+
+  * linux-config-set-symbol
+
+    Set or clear a specific config symbol in one or more .config files.
+
+  * linux-log-diff
+
+    Compare two build logs and display a summary of the regressions and
+    improvements.
+    Line numbers and other locations (e.g. offsets inside a section for
+    linker errors) are ignored in the actual comparion, only the number of
+    occurencies of each error or warning is compared, to compensate for the
+    addition and removal of source lines. The location information is printed
+    in the summary, though.
+    
+      * Show compiler error and warning regressions and improvements between
+        yesterday's and today's builds:
+
+	    cat $(find branch9.yesterday -type f) > yesterday.all
+	    cat $(find branch9 -type f) > today.all
+	    linux-log-diff yesterday.all today.all
+
+  * linux-log-summary
+
+    Display a summary of all errors and warnings in one or more build logs.
+    The summary is sorted by the number of occurrences.
+    Optionally (using `-v'), the names of the affected build logs can be
+    listed for each error or warning.
+
+    Examples:
+
+      * Create a summary of all builds logs:
+
+	    cd branch9 && linux-log-summary $(find * -type f | sort)
+
+      * Create a summary of all builds logs, incl. the list of affected
+        logfiles for each error or warning:
+
+	    cd branch9 && linux-log-summary -v $(find * -type f | sort)
+
+      * Create summaries of build logs per architecture:
+
+	    for i in branch9/*; do cat $i/* > $(basename $i); done
+	    for i in branch9/*; do linux-log-summary $(basename $i); done
+
+  * linux-next-update-branch9
+
+    Helper script to download the latest available build logs of linux-next
+    and store them in branch9/<arch>/<config>
+
+
