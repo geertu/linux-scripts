@@ -1,5 +1,9 @@
 #!/usr/bin/perl -w
 
+# FIXME scripts/mod/file2alias.c
+# FATAL: drivers/input/serio/hil_mlc: struct serio_device_id is not terminated
+# with a NULL entry!
+# http://kisskb.ellerman.id.au/kisskb/buildresult/3385851/
 #
 # © Copyright 2010 by Geert Uytterhoeven
 #

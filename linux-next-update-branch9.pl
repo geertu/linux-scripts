@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 $baseurl = 'http://kisskb.ellerman.id.au/kisskb';
-$branch = '9';
+$branch = '9';	# FIXME Map from `linux-next' to `9'
 
 $basedir = "branch$branch";
 $htmlfile = "branch$branch.html";
