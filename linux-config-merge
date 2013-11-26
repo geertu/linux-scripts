@@ -1,0 +1,114 @@
+#!/usr/bin/perl -w
+
+#
+# © Copyright 2008 by Geert Uytterhoeven
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.
+#
+
+%ops = ( "and" => 0, "or" => 0 );
+
+sub usage()
+{
+    my $name = $0;
+    $name =~ s@.*/@@g;
+    @ops = sort keys %ops;
+    die <<EOF;
+
+Usage: $name <op> <config> ...
+
+Valid ops are: @ops
+EOF
+}
+
+%symbols = ();
+%settings = ();
+%versions = ();
+
+sub read_config()
+{
+    my $file = $_[0];
+
+    open(IN, "<$file") or die "Cannot open config file $file,";
+    while (defined($line = <IN>)) {
+	chomp($line);
+	if (($symbol, $val) = $line =~ /(CONFIG_[A-Za-z0-9_]+)(.*)/) {
+	    $val =~ s/^=//;
+	    $val =~ s/ is not set/n/;
+	    $symbols{$symbol} = $symbol;
+	    $settings{$file}{$symbol} = $val;
+	} elsif (($version) = $line =~/Linux kernel version: (.*)/) {
+	    $versions{$file} = $version;
+	}
+    }
+    close(IN);
+}
+
+sub symbol_and()
+{
+    my $a = $_[0];
+    my $b = $_[1];
+
+    return 'n' if ($a eq 'n' or $b eq 'n');
+    return 'm' if ($a eq 'm' or $b eq 'm');
+    return 'y' if ($a eq 'y' or $b eq 'y');
+    print "Cannot compare \"$a\" and \"$b\"\n";
+    return $a;
+}
+
+sub symbol_or()
+{
+    my $a = $_[0];
+    my $b = $_[1];
+
+    return 'y' if ($a eq 'y' or $b eq 'y');
+    return 'm' if ($a eq 'm' or $b eq 'm');
+    return 'n' if ($a eq 'n' or $b eq 'n');
+    print "Cannot compare \"$a\" and \"$b\"\n";
+    return $a;
+}
+
+&usage if scalar(@ARGV) < 2;
+
+$op = shift @ARGV;
+&usage if !defined($ops{$op});
+
+for $file (@ARGV) {
+    &read_config($file);
+}
+
+$version = $versions{$ARGV[0]};
+for $file (@ARGV) {
+    if ($versions{$file} ne $version) {
+	print "$file: version $versions{$file} != $version\n";
+    }
+}
+
+for $symbol (sort keys %symbols) {
+    if ($op eq 'and') {
+	$res = 'y';
+	for $file (@ARGV) {
+	    if (!defined($settings{$file}{$symbol})) {
+		$res = 'n';
+	    } else {
+		$res = &symbol_and($res, $settings{$file}{$symbol});
+	    }
+	    last if $res eq 'n';
+	}
+    } elsif ($op eq 'or') {
+	$res = 'n';
+	for $file (@ARGV) {
+	    next if !defined($settings{$file}{$symbol});
+	    $res = &symbol_or($res, $settings{$file}{$symbol});
+	    last if $res eq 'y';
+	}
+    }
+    if ($res eq 'n') {
+	print "# $symbol is not set\n";
+    } elsif ($res eq 'm' or $res eq 'y') {
+	print "$symbol=$res\n";
+    } else {
+	print "$symbol=\"$res\"\n";
+    }
+}

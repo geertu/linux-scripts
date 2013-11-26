@@ -1,0 +1,142 @@
+#!/usr/bin/perl -w
+
+#
+# © Copyright 2008 by Geert Uytterhoeven
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.
+#
+
+sub usage()
+{
+    my $name = $0;
+    $name =~ s@.*/@@g;
+    die <<EOF;
+
+Usage: $name [options] <config> ...
+
+Valid options:
+	-h, --help	Display this help
+	-s, --strict    Do not treat unselectable as unselected
+EOF
+}
+
+%symbols = ();
+%settings = ();
+%versions = ();
+
+sub read_config()
+{
+    my $file = $_[0];
+
+    open(IN, "<$file") or die "Cannot open config file $file,";
+    while (defined($line = <IN>)) {
+	chomp($line);
+	if (($symbol, $val) = $line =~ /(CONFIG_[A-Za-z0-9_]+)(.*)/) {
+	    $val =~ s/^=//;
+	    $val =~ s/ is not set/n/;
+	    $symbols{$symbol} = $symbol;
+	    $settings{$file}{$symbol} = $val;
+	} elsif (($version) = $line =~/([^\s]+) Kernel Configuration/) {
+	    $versions{$file} = $version;
+	}
+    }
+    close(IN);
+}
+
+@files = ();
+
+while (defined($ARGV[0])) {
+	$option = $ARGV[0];
+	last if not $option =~ /^-/;
+	if ($option eq '-h' or $option eq '--help') {
+		&usage();
+	} elsif ($option eq '-s' or $option eq '--strict') {
+		$strict = 1;
+	} elsif ($option eq '--') {
+		shift @ARGV;
+		last;
+	} else {
+		print STDERR "Unknown option $option\n";
+		&usage();
+	}
+	shift @ARGV;
+}
+
+$files = scalar(@ARGV);
+&usage if !$files;
+
+for $file (@ARGV) {
+    &read_config($file);
+}
+
+for $file (@ARGV) {
+    next if !defined($versions{$file});
+    $version = $versions{$file};
+    last;
+}
+if (defined($version)) {
+    for $file (@ARGV) {
+	next if !defined($versions{$file});
+	if ($versions{$file} ne $version) {
+	    print "! $file: version $versions{$file} != $version\n";
+	}
+    }
+}
+
+$maxlen = 0;
+for $symbol (keys %symbols) {
+    $len = length $symbol;
+    $maxlen = $len if $len > $maxlen;
+}
+for $file (@ARGV) {
+    $len = length $file;
+    $maxlen = $len if $len > $maxlen;
+}
+
+$i = 0;
+for $file (reverse @ARGV) {
+    $dashes = "-" x ($maxlen + 2*($files - $i) - 1 - length $file);
+    print "! $file $dashes+";
+    print " |" x $i;
+    print "\n";
+    $i++;
+}
+print "!";
+print " " x ($maxlen + 2);
+for $file (reverse @ARGV) {
+    print " |";
+}
+print "\n";
+
+for $symbol (sort keys %symbols) {
+    $same = ' ';
+    $val0 = $settings{$ARGV[0]}{$symbol};
+    if (!defined($val0)) {
+	$val0 = 'n';
+    }
+    for $file (@ARGV) {
+	$val = $settings{$file}{$symbol};
+	if (!defined($val)) {
+	    if ($strict) {
+		$same = '!';
+		last;
+	    }
+	    $val = 'n';
+	}
+	if ($val ne $val0) {
+	    $same = '!';
+	    last;
+	}
+    }
+    printf "%s %-*s:", $same, $maxlen, $symbol;
+    for $file (@ARGV) {
+	if (defined($settings{$file}{$symbol})) {
+	    $val = $settings{$file}{$symbol};
+	    print " $val";
+	} else {
+	    print " .";
+	}
+    }
+    print "\n";
+}

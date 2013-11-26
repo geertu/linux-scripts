@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#
+# © Copyright 2008 by Geert Uytterhoeven
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.
+#
+
+function usage()
+{
+    cat << END
+
+Usage: $(basename $0) CONFIG_<name> <value> <config> ...
+
+END
+    exit -1
+}
+
+if [ $# -lt 3 ]; then
+    usage
+fi
+
+symbol=$1
+val=$2
+shift
+shift
+
+case $symbol in
+    CONFIG_*)
+	;;
+
+    *)
+	symbol=CONFIG_$symbol
+	;;
+esac
+
+case $val in
+    n)
+	new="# $symbol is not set"
+	;;
+
+    y|m|[0-9]*)
+	new="$symbol=$val"
+	;;
+
+    *)
+	new="$symbol=\"$val\""
+	;;
+esac
+
+while [ $# -gt 0 ]; do
+    mv $1 $1.orig
+    ( grep -v $symbol= $1.orig | grep -v "$symbol is not set"; echo $new ) > $1
+    shift
+done
