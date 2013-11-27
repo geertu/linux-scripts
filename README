@@ -3,7 +3,7 @@
 
     Starting from the current .config file, find out how much space is saved
     in the kernel image by individually disabling each of the currently
-    enabled config options.
+    enabled config options. Module support and all modules are disabled first.
 
     You can pass make options to specify e.g. the target architecture and
     cross compiler.
