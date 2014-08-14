@@ -34,6 +34,26 @@
 
     Set or clear a specific config symbol in one or more .config files.
 
+  * linux-dmesg-diff
+
+    Compare dmesg output between kernel versions.
+
+    Dmesg output is saved in "dmesg*" files in the current directory, using
+    the output of "uname -r" as a suffix.
+    You may want to enable CONFIG_LOCALVERSION_AUTO=y and use
+    CONFIG_LOCALVERSION to distinguish between kernel flavors.
+
+    Example:
+
+      * Capture the current dmesg and compare it with the previous one:
+
+	    dmesg
+
+      * Compare the last two captured dmesg outputs for kernel flavor
+	"koelsch-reference":
+
+            dmesg koelsch-reference
+
   * linux-log-diff
 
     Compare two build logs and display a summary of the regressions and

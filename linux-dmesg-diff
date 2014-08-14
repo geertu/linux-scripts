@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#
+# © Copyright 2011 by Geert Uytterhoeven
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.
+#
+
+if [ $# == 0 ]; then
+	dmesg > dmesg
+	dmesg > dmesg-$(uname -r)
+	colordiff -u dmesg{.old,} | less -iR
+	cmp dmesg{.old,} || cp dmesg dmesg.old
+else
+	colordiff -u $(\ls -tr dmesg-*$1* | tail -2) | less -R
+fi
