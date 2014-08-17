@@ -1,5 +1,12 @@
 #!/usr/bin/perl -w
 
+#
+# © Copyright 2010 by Geert Uytterhoeven
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.
+#
+
 $baseurl = 'http://kisskb.ellerman.id.au/kisskb';
 $branch = '9';	# FIXME Map from `linux-next' to `9'
 
