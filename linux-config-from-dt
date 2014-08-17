@@ -1,0 +1,157 @@
+#!/usr/bin/perl -w
+
+#
+# © Copyright 2014 by Geert Uytterhoeven
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.
+#
+
+
+sub usage()
+{
+	my $name = $0;
+	$name =~ s@.*/@@g;
+	die <<EOF;
+
+Usage: $name [options] [dts-file | dtb-file]...
+
+Valid options:
+	-h, --help	Display this help
+	-d, --debug	Enable debug mode
+	-v, --verbose	Enable verbose mode
+EOF
+}
+
+$debug = 0;		# FIXME
+$verbose = 1;		# FIXME
+
+
+%compat_done = ();	# compatible-properties we've found a driver for
+%compat_seen = ();	# compatible-properties we've already seen before
+
+%source_seen = ();	# source files we need to compile
+
+# FIXME %symbols = ();		# config symbols we must enable
+
+# scripts/dtc/dtc -I dts -O dts <file>.dts
+# scripts/dtc/dtc -I dtb -O dts <file>.dtb
+
+sub handle_compatible()
+{
+	my $compatible = shift;
+	my $compat;
+
+	my @compatibles = split(', ', $compatible);
+	for $compat (@compatibles) {
+		$compat =~ s/^"//;
+		$compat =~ s/"$//;
+
+		# Return if we already found a driver for it
+		return if (exists($compat_done{$compat}));
+		# Skip to next alternative if we couldn't find a driver for it
+		next if (exists($compat_seen{$compat}));
+
+		print "$compat " if $verbose;
+		$compat_seen{$compat} = 1;
+
+		# Find source file that contains a driver for this value
+		my $files;
+		if ($compat =~ /,/) {
+			# Vendor-specific compatible properties may be handled
+			# all over the tree
+			$files = '"*.c"';
+		} else {
+			# Limit generic compatible properties to drivers
+			$files = '"drivers/*.c" "sound/*.c"';
+		}
+		my $sources = `git grep -l \\"$compat\\" -- $files`;
+		chomp($sources);
+		if ($sources eq "") {
+			print "was not found, continuing...\n" if $verbose;
+			next;
+		}
+
+		print "is provided by:\n" if $verbose;
+
+		$compat_done{$compat} = 1;
+
+		my @sources = split("\n", $sources);
+		for $source (@sources) {
+			# Return if we already handled this source file
+			return if (exists($source_seen{$source}));
+
+			print "\t$source\n" if $verbose;
+			$source_seen{$source} = 1;
+
+			# Find the Kconfig symbol that enables the driver
+			my ($dir, $base) = $source =~ m{(.*)/(.*).c};
+			print "\tdir = $dir, base = $base\n" if $debug;
+			my $lines = `git grep -w "$base.o" $dir/Makefile`;
+			my @lines = split("\n", $lines);
+			for $line (@lines) {
+				print "\tline = $line" if $debug;
+				my ($config) = $line =~ m{(CONFIG_[A-Za-z0-9_]*)};
+				if (!defined($config)) {
+					print "\t\tNo config symbol\n";
+					next;
+				}
+
+				print "\t\tneeds $config\n";
+				# FIXME Find dependencies for the config symbol
+			}
+		}
+		return;
+	}
+	print "No match found for $compatible\n";
+}
+
+sub read_dts()
+{
+	my $file = shift;
+	my $type = "dts";	# Assume DTS by default
+	my $line;
+
+	$type = "dtb" if $file =~ /\.dtb$/;
+	open(DTS, "dtc -I $type -O dts $file |") or die "Cannot run dtc";
+	while ($line = <DTS>) {
+		chomp($line);
+		next if not $line =~ /compatible =/;
+
+		# Extract all compatible entries for this device
+		$line =~ s/^\t*//;
+		print "$line\n" if $debug;
+		$line =~ s/^compatible = //;
+		$line =~ s/;$//;
+
+		# Look'em up
+		&handle_compatible($line);
+	}
+
+	close(DTS);
+}
+
+while (defined($ARGV[0])) {
+	$option = $ARGV[0];
+	last if not $option =~ /^-/;
+	if ($option eq '-h' or $option eq '--help') {
+		&usage();
+	} elsif ($option eq '-d' or $option eq '--debug') {
+		$debug = 1;
+	} elsif ($option eq '-v' or $option eq '--verbose') {
+		$verbose = 1;
+	} elsif ($option eq '--') {
+		shift @ARGV;
+		last;
+	} else {
+		print STDERR "Unknown option $option\n";
+		&usage();
+	}
+	shift @ARGV;
+}
+
+&usage if ($#ARGV < 0);
+
+for $file (@ARGV) {
+	&read_dts($file);
+}
