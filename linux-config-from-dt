@@ -43,6 +43,12 @@ sub handle_compatible()
 	my $compat;
 
 	my @compatibles = split(', ', $compatible);
+
+	# Add the first property without vendor prefix for modalias matching
+	if (($generic) = $compatibles[0] =~ /,(.*)"/) {
+		push @compatibles, "$generic";
+	}
+
 	for $compat (@compatibles) {
 		$compat =~ s/^"//;
 		$compat =~ s/"$//;
