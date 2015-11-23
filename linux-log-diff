@@ -113,7 +113,8 @@ sub read_log()
 
 sub print_report
 {
-    my %db = %{$_[0]};
+    my $type = $_[0];
+    my %db = %{$_[1]};
 
     my ($file, $msgs, $msg, $logs);
     my @regressions = ();
@@ -141,12 +142,12 @@ sub print_report
 
     $n = $#regressions + 1;
     if ($n) {
-	print "\n$n regressions:\n  + ";
+	print "\n$n $type regressions:\n  + ";
 	print join("  + ", sort @regressions);
     }
     $n = $#improvements + 1;
     if ($n) {
-	print "\n$n improvements:\n  - ";
+	print "\n$n $type improvements:\n  - ";
 	print join("  - ", sort @improvements);
     }
 }
@@ -176,7 +177,7 @@ $log2 = shift @ARGV;
 &read_log($log2);
 
 print "\n*** ERRORS ***\n";
-print_report(\%errors);
+print_report("error", \%errors);
 print "\n\n*** WARNINGS ***\n";
-print_report(\%warnings);
+print_report("warning", \%warnings);
 
