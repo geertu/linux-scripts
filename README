@@ -59,12 +59,12 @@
 
       * Capture the current dmesg and compare it with the previous one:
 
-	    dmesg
+	    linux-dmesg-diff
 
       * Compare the last two captured dmesg outputs for kernel flavor
 	"koelsch-reference":
 
-            dmesg koelsch-reference
+            linux-dmesg-diff koelsch-reference
 
   * linux-log-diff
 
