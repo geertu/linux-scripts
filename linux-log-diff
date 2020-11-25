@@ -80,6 +80,10 @@ sub read_log()
 	    # link error: relocation truncated
 	    $msg1 .= " " if ($msg1 ne "");
 	    &add_record(\%errors, $log, "error", $loc, "$msg1$msg2");
+	} elsif (($loc, $msg) =
+	    $line =~ m{(^\(.*\)): (undefined reference.*)}i) {
+	    # link error: undefined reference.
+	    &add_record(\%errors, $log, "error", $loc, "$msg");
 	} elsif (($msg) = $line =~ m{error: (.*undefined!)}i) {
 	    # link error: undefined symbol
 	    &add_record(\%errors, $log, "error", "N/A", $msg);
