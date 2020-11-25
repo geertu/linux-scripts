@@ -83,7 +83,7 @@ if grep -q '^CONFIG_MODULES=y$' .config; then
 	$INFO Disabling modules
 	sed -i -e 's/^CONFIG_MODULES=y$/CONFIG_MODULES=n/g' \
 	       -e 's/=m$/=n/g' .config
-	$MAKE oldnoconfig >& /dev/null
+	$MAKE olddefconfig >& /dev/null
 
 	if grep -q '^CONFIG_MODULES=y$' .config; then
 		echo CONFIG_MODULES cannot be disabled
@@ -103,7 +103,7 @@ save_success baseline
 for option in $(grep '^CONFIG_.*=y$' .config.baseline | sed -e 's/=y$//g'); do
 	$INFO Disabling $option
 	sed -e "s/^$option=y\$/$option=n/g" < .config.baseline > .config
-	$MAKE oldnoconfig >& /dev/null
+	$MAKE olddefconfig >& /dev/null
 
 	if grep -q "^$option=y$" .config; then
 		echo $option cannot be disabled
