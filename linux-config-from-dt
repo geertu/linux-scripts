@@ -93,7 +93,7 @@ sub handle_compatible()
 			# Find the Kconfig symbol that enables the driver
 			my ($dir, $base) = $source =~ m{(.*)/(.*).c};
 			print "\tdir = $dir, base = $base\n" if $debug;
-			my $lines = `git grep -w "$base.o" $dir/Makefile`;
+			my $lines = `git grep -w "$base.o" -- $dir/Makefile $dir/Kbuild`;
 			my @lines = split("\n", $lines);
 			for $line (@lines) {
 				print "\tline = $line" if $debug;
