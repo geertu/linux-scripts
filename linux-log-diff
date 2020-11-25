@@ -63,7 +63,11 @@ sub read_log()
     while ($line = <LOG>) {
 	chomp($line);
 
-	if (($file, $loc, $msg) =
+	if ($line =~ m{^warning: The last gc run reported the following} or
+	    $line =~ m{^warning: There are too many unreachable loose objects}) {
+	    # git warning
+	    print STDERR "Ignoring git: $line\n" if $debug;
+	} elsif (($file, $loc, $msg) =
 	    $line =~ m{(^[^:]*):([0-9:]+):\s*(error:\s*.*$)}i) {
 	    # compile error
 	    &add_record(\%errors, $log, $file, $loc, $msg);
