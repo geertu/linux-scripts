@@ -42,7 +42,16 @@ sub handle_compatible()
 	my $compatible = shift;
 	my $compat;
 
-	my @compatibles = split(', ', $compatible);
+	$compatible =~ s/^"//;
+	$compatible =~ s/"$//;
+
+	# Old dtc returned one or more compatible values wrapped by double
+	# quotes and separated by a comma and a space.
+	$compatible =~ s/\", "/ /g;
+	# New dtc returns a single string wrapped by double quotes, with
+	# multiple compatible values separated by the literal "\0".
+	$compatible =~ s/\\0/ /g;
+	my @compatibles = split(" ", $compatible);
 
 	# Add the first property without vendor prefix for modalias matching
 	if (($generic) = $compatibles[0] =~ /,(.*)"/) {
@@ -50,8 +59,6 @@ sub handle_compatible()
 	}
 
 	for $compat (@compatibles) {
-		$compat =~ s/^"//;
-		$compat =~ s/"$//;
 
 		# Return if we already found a driver for it
 		return if (exists($compat_done{$compat}));
