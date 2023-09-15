@@ -111,4 +111,17 @@
     Helper script to download the latest available build logs of linux-next
     and store them in branch9/<arch>/<config>
 
+  * soc-dts-diff
 
+    Compare DTS or source files, ignoring SoC part numbers.
+    The SoC part number is derived from the file name.
+
+    Examples:
+
+      * Compare the R-aCar H3 ES2.0 and M3-W DTS files:
+
+	    soc-dts-diff arch/arm64/boot/dts/renesas/r8a779{51,60}.dtsi
+
+      * Compare the R-Car H2 and M2-W clock drivers:
+
+	    soc-dts-diff -b drivers/clk/renesas/r8a779[01]-cpg-mssr.c

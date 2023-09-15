@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# © Copyright 2018 by Geert Uytterhoeven
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.
+
+set -e
+
+function usage()
+{
+        cat <<END
+
+Usage: $(basename $0) [options...] <dts1> <dts2>
+
+END
+	exit -1
+}
+
+function get_soc()
+{
+	local soc
+
+	soc=$(basename $1)
+
+	# Strip vendor prefix
+	case $soc in
+	*,*)
+		soc=${soc##*,}
+		;;
+	esac
+
+	case $soc in
+	pfc-*.c|pinctrl-*.c)
+		soc=${soc##*-}
+		soc=${soc%.c}
+		;;
+
+	*)
+		soc=${soc%%[-.]*}
+		;;
+	esac
+
+	echo $soc
+}
+
+options=-u
+
+for i in $*; do
+	case $i in
+	-*)
+		options="$options $i"
+		;;
+
+	*)
+		if [ "$dts1" == "" ]; then
+			dts1=$i
+		elif [ "$dts2" == "" ]; then
+			dts2=$i
+		else
+			usage
+		fi
+		;;
+	esac
+done
+
+if [ "$dts1" == "" -o "$dts2" == "" ]; then
+	usage
+fi
+
+soc1=$(get_soc $dts1)
+soc2=$(get_soc $dts2)
+
+colordiff $options \
+	--label $dts1 <(sed -e "s/$soc1/<SOC>/gi" $dts1) \
+	--label $dts2 <(sed -e "s/$soc2/<SOC>/gi" $dts2)
