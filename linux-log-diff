@@ -95,6 +95,10 @@ sub read_log()
 	    # make error
 	    &add_record(\%errors, $log, "error", "N/A",
 			"No rule to make target $target");
+	} elsif (($target) = $line =~ m{Inconsistent kallsyms data}i) {
+	    # kallsyms error
+	    &add_record(\%errors, $log, "error", "N/A",
+			"Inconsistent kallsyms data");
 	} elsif (($file, $loc, $msg) =
 	    $line =~ m{(^[^:]*):([0-9:]+):\s*(warning:\s*.*$)}i) {
 	    # compile warning
