@@ -91,10 +91,12 @@ sub handle_compatible()
 
 		my @sources = split("\n", $sources);
 		for $source (@sources) {
-			# Return if we already handled this source file
-			return if (exists($source_seen{$source}));
-
 			print "\t$source\n" if $verbose;
+			if (exists($source_seen{$source})) {
+				# Return if we already handled this source file
+				print "\t\tseen\n";
+				return;
+			}
 			$source_seen{$source} = 1;
 
 			# Find the Kconfig symbol that enables the driver
