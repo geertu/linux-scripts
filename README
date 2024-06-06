@@ -1,4 +1,32 @@
 
+  * git-merge-topics
+
+    Read commands from a topicfile for merging branches, and cherry-picking or
+    reverting commits:
+
+       git-merge-topics <topicfile>
+
+    Supported commands are:
+
+	merge <branch>
+	merge <repo> <branch>
+	pick <sha1>
+	revert <sha1>
+	BREAK
+	BRK
+
+    The commands "BREAK" and "BRK" will make the script stop operation at that
+    point.  Remove them, and run "git-merge-topics" without parameters to
+    resume operation.
+
+    Comments start with a hash mark (#).
+
+    In case of a merge conflict, the script will stop operation.  Resolve the
+    conflict, and run "git-merge-topics" without parameters to resume
+    operation.
+
+    If you do not want to continue, run "rm -rf .git-merge-topics" manually.
+
   * linux-analyze-marginal-sizes
 
     Starting from the current .config file, find out how much space is saved

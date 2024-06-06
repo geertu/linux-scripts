@@ -1,0 +1,132 @@
+#!/bin/bash
+
+# © Copyright 2014-2023 by Geert Uytterhoeven
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.
+
+set -e
+
+STATEDIR=.git-merge-topics
+FILE=$STATEDIR/topics
+STATE=$STATEDIR/state
+
+function usage()
+{
+        cat <<END
+
+Usage: $(basename $0) [<topicfile>]
+
+END
+	exit -1
+}
+
+case $# in
+0)
+	if [ -d $STATEDIR -a -f $FILE ]; then
+		read topicfile < $FILE
+	else
+		echo No merge in progress
+		exit -1
+	fi
+	;;
+
+1)
+	case $1 in
+	-h|--help)
+		usage
+		;;
+
+	*)
+		topicfile=$1
+		;;
+	esac
+	;;
+
+*)
+	usage
+	;;
+esac
+
+i=0
+done=0
+if [ -d $STATEDIR -a -f $FILE ]; then
+	rm -f $FILE.tmp
+	echo $topicfile > $FILE.tmp
+	if ! cmp $FILE $FILE.tmp > /dev/null; then
+		echo $(basename $0) $(cat $FILE) still in progress
+		exit -1
+	fi
+	rm $FILE.tmp
+	if [ -f $STATE ]; then
+		done=$(cat $STATE)
+	fi
+else
+	mkdir -p $STATEDIR
+	echo $topicfile > $FILE
+fi
+
+# Merge various topic branches
+sed -e 's/\s\s*#.*$//g' < $topicfile | grep -v '^#' | grep -v '^$' | \
+while IFS= read line; do
+	i=$((i + 1))
+	if [ $done -lt $i ]; then
+		cmd=${line%% *}
+		args=${line#* }
+		case $cmd in
+		BREAK|BRK)
+			echo
+			echo Paused.  Remove BREAK to continue.
+			exit -1
+			;;
+
+		merge)
+			echo === Merging $args ===
+			case $args in
+			*\ *~*)
+				remote=${args%~*}
+				suffix=~${args#*~}
+				git fetch -q $remote
+				branch=FETCH_HEAD$suffix
+				;;
+			*\ *)
+				git fetch -q $args
+				branch=FETCH_HEAD
+				;;
+
+			*)
+				branch=$args
+				;;
+			esac
+			git show -s --oneline $branch
+			git merge --no-ff --no-edit $branch
+			;;
+
+		pick)
+			for commit in $args; do
+				echo === Cherry-picking \"$(git show -s --pretty=%s $commit)\" ===
+				git cherry-pick $commit
+			done
+			;;
+
+		revert)
+			for commit in $args; do
+				echo === Reverting \"$(git show -s --pretty=%s $commit)\" ===
+				git revert $commit
+			done
+			;;
+
+		*)
+			echo
+			echo Unknown command $cmd
+			exit -1
+			;;
+		esac
+
+		echo $i > $STATE
+	else 
+		echo Skipping $line
+	fi
+done
+
+rm -rf $STATEDIR
